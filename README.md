@@ -2,6 +2,12 @@
 
 A full-featured script-introspection and debugging toolkit with a classic-debugger dark UI.
 
+## Important: authorized use only
+
+R-CE is intended only for debugging Roblox experiences that you own or are explicitly authorized to test, in a private development environment. Do not use it to inspect, interfere with, or gain an advantage in games or services you do not own. Do not use it to bypass access controls, extract private or server-only data, or disrupt other players.
+
+Some debugging operations can change runtime state, execute code, or expose sensitive information. Use them only with explicit authorization and with backups of anything important. You are responsible for complying with applicable laws, Roblox's terms and policies, and any project agreements. This disclaimer does not grant permission to access any game or system and does not guarantee that use of this project is safe or permitted.
+
 ## Tabs
 
 | Tab | What it does |
@@ -19,11 +25,7 @@ A full-featured script-introspection and debugging toolkit with a classic-debugg
 
 ## Run
 
-```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Prolokmn2/R-CE/main/loader.lua"))()
-```
-
-`RightShift` hides/shows the window.
+Use only in a private development environment for an experience you own or are authorized to test. `RightShift` hides/shows the window.
 
 Best Debuger out there right now
 this debugger is made so you can debug and fix stuff in your game 
@@ -39,3 +41,7 @@ this debugger is made so you can debug and fix stuff in your game
 - **Multi-type memory scanner** (number, string, bool, integer, any)
 - Re-fire script generator in Remote Spy
 - Auto-wires all spies when Live View is enabled
+
+## License
+
+This project is distributed under the GNU General Public License, version 3. See [LICENSE](./LICENSE) for the full license text.
