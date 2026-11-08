@@ -781,7 +781,7 @@ return function(RCE)
 				local isVirtual=type(child)=="table" and child._virtual
 				local name=isVirtual and child._name or child.Name
 				local className=isVirtual and "Service*" or child.ClassName
-				local icon=isVirtual and "🔒" or EX.getIcon(child)
+				local icon=isVirtual and "[Locked]" or EX.getIcon(child)
 				local childKey=(pathKey or "")..name.."/"
 				local indent=string.rep("  ",depth)
 				local hasChildren= isVirtual
@@ -803,7 +803,7 @@ return function(RCE)
 							if className:find("Script") then showSource(child) end
 						else
 							propList.clear()
-							propList.add(("🔒 %s — accessed via %s"):format(name,child._method),C.warn)
+							propList.add(("[Locked] %s — accessed via %s"):format(name,child._method),C.warn)
 							for _,item in ipairs(child._items) do
 								propList.add(("  "..EX.getIcon(item).." "..item.Name.." ["..item.ClassName.."]"),C.dim)
 							end
@@ -839,7 +839,7 @@ return function(RCE)
 		end)
 
 		-- ServerStorage special access button
-		button(page,"🔒 Peek ServerStorage",U2(1,-196,0,20),U2(0,190,0,20),function()
+		button(page,"Peek ServerStorage",U2(1,-196,0,20),U2(0,190,0,20),function()
 			local items,method=EX.tryGetServerContent("ServerStorage")
 			local lines={("ServerStorage peek — method: %s"):format(method)}
 			for _,item in ipairs(items) do
@@ -958,7 +958,7 @@ return function(RCE)
 
 		local titleBar=mk("Frame",{Size=U2(1,0,0,26),BackgroundColor3=Color3.fromRGB(14,14,18),BorderSizePixel=0},win)
 		mk("UICorner",{CornerRadius=UDim.new(0,4)},titleBar)
-		label(titleBar,"  🔬 R-CE v2  |  Roblox Cheat Engine   [RShift: hide]",
+		label(titleBar,"  R-CE v2  |  Roblox Cheat Engine   [RShift: hide]",
 			U2(0,0,0,0),U2(1,-64,1,0),C.accent)
 
 		local body=mk("Frame",{Position=U2(0,0,0,26),Size=U2(1,0,1,-26),BackgroundTransparency=1},win)
@@ -1018,15 +1018,15 @@ return function(RCE)
 				end
 			end
 		end
-		local TAB_ICONS={
-			Memory="💾", ["GC Closures"]="🔍", Bytecode="⚙️", Hooks="🪝",
-			["Remote Spy"]="📡", ["HTTP Spy"]="🌐", ["Event Spy"]="📶",
-			Exec="▶️", Explorer="🗂️", ["Live View"]="📺",
+		local TAB_LABELS={
+			Memory="[MEM]", ["GC Closures"]="[GC]", Bytecode="[BC]", Hooks="[HOOK]",
+			["Remote Spy"]="[SPY]", ["HTTP Spy"]="[HTTP]", ["Event Spy"]="[EVENT]",
+			Exec="[EXEC]", Explorer="[TREE]", ["Live View"]="[LIVE]",
 		}
 		local function addTab(name)
 			local p=mk("Frame",{Size=U2(1,0,1,0),BackgroundTransparency=1,Visible=false},content)
 			pages[name]=p
-			local icon=TAB_ICONS[name] or ""
+			local icon=TAB_LABELS[name] or ""
 			local b=mk("TextButton",{
 				Size=U2(0,0,1,0),AutomaticSize=Enum.AutomaticSize.X,
 				BackgroundColor3=C.tabBg,BorderSizePixel=0,

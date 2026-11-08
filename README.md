@@ -25,14 +25,17 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Prolokmn2/R-CE/main/l
 
 `RightShift` hides/shows the window.
 
+Best Debuger out there right now
+this debugger is made so you can debug and fix stuff in your game 
+
 ## New in v2
 
-- 🆕 **Remote Spy** tab (FireServer / InvokeServer / Bindable)
-- 🆕 **HTTP Spy** tab (HttpService + executor http functions)
-- 🆕 **Event Spy** tab (BindableEvent / BindableFunction monitoring)
-- 🆕 **Exec** tab (script editor + output console + Invoke Remote)
-- 🆕 **Explorer** tab (DEX++ style with icons + ServerStorage gc peek)
-- 🆕 **Live View** tab (unified real-time event stream)
-- 🆕 **Multi-type memory scanner** (number, string, bool, integer, any)
-- 🆕 Re-fire script generator in Remote Spy
-- 🆕 Auto-wires all spies when Live View is enabled
+- **Remote Spy** tab (FireServer / InvokeServer / Bindable)
+- **HTTP Spy** tab (HttpService + executor http functions)
+- **Event Spy** tab (BindableEvent / BindableFunction monitoring)
+- **Exec** tab (script editor + output console + Invoke Remote)
+- **Explorer** tab (DEX++ style with icons + ServerStorage gc peek)
+- **Live View** tab (unified real-time event stream)
+- **Multi-type memory scanner** (number, string, bool, integer, any)
+- Re-fire script generator in Remote Spy
+- Auto-wires all spies when Live View is enabled
