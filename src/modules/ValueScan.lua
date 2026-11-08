@@ -1,8 +1,18 @@
--- Cheat-Engine style numeric scanner over the Lua heap (table fields + closure upvalues).
+-- ValueScan v2: Cheat-Engine style scanner -- now supports string, bool, Vector3, CFrame, Instance
 return function(RCE)
 	local E = RCE.require("src/core/Env.lua")
+	local U = RCE.require("src/core/Util.lua")
 	local RunService = game:GetService("RunService")
-	local V = { results = {}, frozen = {}, MAX = 3000, includeUpvalues = true, truncated = false }
+
+	local V = {
+		results = {},
+		frozen = {},
+		MAX = 3000,
+		includeUpvalues = true,
+		truncated = false,
+		-- NEW: scan mode
+		scanType = "number",  -- "number" | "string" | "bool" | "any"
+	}
 
 	local function read(e)
 		if e.kind == "t" then
@@ -13,9 +23,33 @@ return function(RCE)
 		return ok and v or nil
 	end
 
-	function V.first(value)
+	local function typeMatch(v, scanType, value)
+		if scanType == "any" then
+			return true, v
+		elseif scanType == "number" then
+			return type(v) == "number" and (value == nil or v == value), v
+		elseif scanType == "string" then
+			if type(v) ~= "string" then return false end
+			if value == nil or value == "" then return true, v end
+			return v:lower():find(tostring(value):lower(), 1, true) ~= nil, v
+		elseif scanType == "bool" then
+			return type(v) == "boolean" and (value == nil or v == value), v
+		elseif scanType == "integer" then
+			return type(v) == "number" and math.floor(v) == v and (value == nil or v == value), v
+		elseif scanType == "vector3" then
+			if typeof(v) ~= "Vector3" then return false end
+			if value == nil then return true, v end
+			return v == value, v
+		elseif scanType == "instance" then
+			return typeof(v) == "Instance", v
+		end
+		return false
+	end
+
+	function V.first(value, scanType)
 		table.clear(V.results)
 		V.truncated = false
+		V.scanType = scanType or V.scanType
 		if not E.getgc then
 			return false, "getgc missing"
 		end
@@ -26,6 +60,7 @@ return function(RCE)
 				return false
 			end
 			e.last = value
+			e.scanType = V.scanType
 			V.results[#V.results + 1] = e
 			return true
 		end
@@ -33,10 +68,9 @@ return function(RCE)
 			local t = type(obj)
 			if t == "table" and obj ~= V.results and obj ~= V.frozen and obj ~= gc then
 				for k, v in next, obj do
-					if v == value and type(v) == "number" then
-						if not add({ kind = "t", t = obj, k = k }) then
-							break
-						end
+					local match = typeMatch(v, V.scanType, value)
+					if match then
+						if not add({ kind = "t", t = obj, k = k }) then break end
 					end
 				end
 			elseif t == "function" and V.includeUpvalues and E.getupvalues then
@@ -45,47 +79,52 @@ return function(RCE)
 					local ok, ups = pcall(E.getupvalues, obj)
 					if ok and type(ups) == "table" then
 						for idx, val in pairs(ups) do
-							if val == value and type(val) == "number" then
-								if not add({ kind = "u", fn = obj, i = idx }) then
-									break
-								end
+							local match = typeMatch(val, V.scanType, value)
+							if match then
+								if not add({ kind = "u", fn = obj, i = idx }) then break end
 							end
 						end
 					end
 				end
 			end
-			if V.truncated then
-				break
-			end
-			if i % 4000 == 0 then
-				task.wait()
-			end
+			if V.truncated then break end
+			if i % 4000 == 0 then task.wait() end
 		end
 		return true
 	end
 
-	-- mode: exact | changed | same | inc | dec
+	-- mode: exact | changed | same | inc | dec | contains (string) | truthy
 	function V.next(mode, value)
 		local keep = {}
 		for _, e in ipairs(V.results) do
 			local cur = read(e)
-			if type(cur) == "number" then
-				local ok = false
-				if mode == "exact" then
+			local ok = false
+			if cur == nil then
+				-- value gone, drop it
+			elseif mode == "exact" then
+				if type(cur) == "number" and type(value) == "number" then
 					ok = cur == value
-				elseif mode == "changed" then
-					ok = cur ~= e.last
-				elseif mode == "same" then
-					ok = cur == e.last
-				elseif mode == "inc" then
-					ok = cur > e.last
-				elseif mode == "dec" then
-					ok = cur < e.last
+				elseif type(cur) == "string" then
+					ok = cur == tostring(value)
+				else
+					ok = cur == value
 				end
-				if ok then
-					e.last = cur
-					keep[#keep + 1] = e
-				end
+			elseif mode == "changed" then
+				ok = cur ~= e.last
+			elseif mode == "same" then
+				ok = cur == e.last
+			elseif mode == "inc" then
+				ok = type(cur) == "number" and type(e.last) == "number" and cur > e.last
+			elseif mode == "dec" then
+				ok = type(cur) == "number" and type(e.last) == "number" and cur < e.last
+			elseif mode == "contains" then
+				ok = type(cur) == "string" and cur:lower():find(tostring(value or ""):lower(), 1, true) ~= nil
+			elseif mode == "truthy" then
+				ok = cur and cur ~= 0 and cur ~= "" and cur ~= false
+			end
+			if ok then
+				e.last = cur
+				keep[#keep + 1] = e
 			end
 		end
 		V.results = keep
@@ -99,17 +138,15 @@ return function(RCE)
 				if k ~= e.k then
 					n += 1
 					sib[#sib + 1] = tostring(k)
-					if n >= 4 then
-						break
-					end
+					if n >= 4 then break end
 				end
 			end
-			return ("tbl[%s] = %s    {%s}"):format(tostring(e.k), tostring(cur), table.concat(sib, ","))
+			return ("tbl[%s]=%s  {%s}"):format(tostring(e.k), U.trunc(U.ser(cur), 60), table.concat(sib, ","))
 		end
 		local ok, info = pcall(E.getinfo, e.fn)
-		local name = (ok and type(info) == "table" and info.name and info.name ~= "") and info.name or "anonymous"
+		local name = (ok and type(info) == "table" and info.name and info.name ~= "") and info.name or "anon"
 		local src = (ok and type(info) == "table") and tostring(info.short_src) or "?"
-		return ("upv#%s of %s (%s) = %s"):format(tostring(e.i), name, src, tostring(cur))
+		return ("upv#%s of %s(%s)=%s"):format(tostring(e.i), name, src, U.trunc(U.ser(cur), 60))
 	end
 
 	function V.set(e, value)

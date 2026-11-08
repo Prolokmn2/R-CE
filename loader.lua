@@ -1,10 +1,10 @@
 --[[
-	R-CE  |  Roblox Cheat Engine  |  loader
+	R-CE v2  |  Roblox Cheat Engine  |  loader
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/Prolokmn2/R-CE/main/loader.lua"))()
 
-	Optional globals (set BEFORE running the loader):
+	Optional globals (set BEFORE running):
 		getgenv().RCE_BASE  = "https://raw.githubusercontent.com/<user>/<repo>/<branch>/"
-		getgenv().RCE_LOCAL = true   -- read modules from workspace/R-CE/<path> instead of HTTP
+		getgenv().RCE_LOCAL = true   -- read from workspace/R-CE/ instead of HTTP
 ]]
 local genv = (getgenv and getgenv()) or _G
 if genv.RCE and type(genv.RCE.Unload) == "function" then
@@ -14,7 +14,7 @@ end
 local BASE = genv.RCE_BASE or "https://raw.githubusercontent.com/Prolokmn2/R-CE/main/"
 local LOCAL = genv.RCE_LOCAL
 
-local RCE = { Version = "0.1.0", Modules = {}, Cleanups = {}, Base = BASE }
+local RCE = { Version = "2.0.0", Modules = {}, Cleanups = {}, Base = BASE }
 
 local function fetch(path)
 	if LOCAL and readfile then
@@ -23,12 +23,9 @@ local function fetch(path)
 	return game:HttpGet(BASE .. path)
 end
 
--- every module file is:  return function(RCE) ... return Module end
 function RCE.require(path)
 	local cached = RCE.Modules[path]
-	if cached ~= nil then
-		return cached
-	end
+	if cached ~= nil then return cached end
 	local ok, src = pcall(fetch, path)
 	if not ok or type(src) ~= "string" or src == "" then
 		error(("[R-CE] failed to fetch %s: %s"):format(path, tostring(src)), 0)
@@ -42,18 +39,12 @@ function RCE.require(path)
 	return mod
 end
 
-function RCE.OnUnload(fn)
-	table.insert(RCE.Cleanups, fn)
-end
+function RCE.OnUnload(fn) table.insert(RCE.Cleanups, fn) end
 
 function RCE.Unload()
-	for i = #RCE.Cleanups, 1, -1 do
-		pcall(RCE.Cleanups[i])
-	end
+	for i = #RCE.Cleanups, 1, -1 do pcall(RCE.Cleanups[i]) end
 	table.clear(RCE.Cleanups)
-	if genv.RCE == RCE then
-		genv.RCE = nil
-	end
+	if genv.RCE == RCE then genv.RCE = nil end
 end
 
 genv.RCE = RCE
